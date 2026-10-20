@@ -62,3 +62,31 @@ O trabalho será desenvolvido incrementalmente, com commits separados para as pr
 - experimentos de memória e tempo de execução.
 
 As funcionalidades serão documentadas e testadas conforme forem implementadas.
+
+
+## Busca em largura (BFS)
+
+O método `busca_em_largura(origem)` percorre o grafo a partir do vértice
+inicial, usando uma fila FIFO. Ele retorna um dicionário indexado pelos
+vértices; cada valor contém `pai` e `nivel`. A origem tem nível zero e pai
+`None`. Vértices que não podem ser alcançados a partir da origem também são
+listados, com pai e nível `None`.
+
+Exemplo:
+
+```python
+from grafo import Grafo
+
+grafo = Grafo(5, representacao="lista")
+for u, v in [(1, 2), (2, 5), (5, 3), (4, 5), (1, 5)]:
+    grafo.adicionar_aresta(u, v)
+
+resultado = grafo.busca_em_largura(1)
+for vertice, dados in resultado.items():
+    print(vertice, dados["pai"], dados["nivel"])
+```
+
+A ordem de visita é determinística porque os vizinhos são consultados em ordem
+crescente. O algoritmo usa `collections.deque` como fila, para remover o
+próximo vértice em tempo eficiente. A gravação da árvore em arquivo será
+implementada numa etapa posterior, junto com as operações de entrada e saída.

@@ -1,8 +1,10 @@
-"""Representação básica de um grafo não direcionado.
+"""Biblioteca para grafos não direcionados.
 
-A classe permite escolher entre lista e matriz de adjacência no momento da
-criação. As operações públicas são as mesmas para as duas representações.
+A classe permite escolher entre lista e matriz de adjacência e oferece
+operações comuns às duas representações, incluindo busca em largura (BFS).
 """
+
+from collections import deque
 
 
 class Grafo:
@@ -143,3 +145,33 @@ class Grafo:
             "grau_maximo": max(graus.values()),
             "grau_medio": sum(graus.values()) / self.numero_vertices,
         }
+
+    def busca_em_largura(self, origem: int) -> dict[int, dict[str, int | None]]:
+        """Executa busca em largura (BFS) a partir de ``origem``.
+
+        Retorna um dicionário indexado por vértice. Para cada vértice, o valor
+        contém ``pai`` e ``nivel``. A origem tem pai ``None`` e nível zero.
+        Vértices inalcançáveis também aparecem no resultado, com pai e nível
+        ``None``. A ordem de visita é determinística porque ``vizinhos``
+        retorna os vizinhos em ordem crescente.
+        """
+        self._validar_vertice(origem)
+
+        resultado: dict[int, dict[str, int | None]] = {
+            vertice: {"pai": None, "nivel": None}
+            for vertice in range(1, self.numero_vertices + 1)
+        }
+        resultado[origem]["nivel"] = 0
+        fila = deque([origem])
+
+        while fila:
+            atual = fila.popleft()
+            nivel_atual = resultado[atual]["nivel"]
+            # Um vértice só entra na fila quando recebe seu nível pela primeira vez.
+            for vizinho in self.vizinhos(atual):
+                if resultado[vizinho]["nivel"] is None:
+                    resultado[vizinho]["pai"] = atual
+                    resultado[vizinho]["nivel"] = nivel_atual + 1
+                    fila.append(vizinho)
+
+        return resultado

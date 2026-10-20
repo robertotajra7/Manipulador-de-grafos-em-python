@@ -5,6 +5,7 @@ operações comuns às duas representações, incluindo busca em largura (BFS).
 """
 
 from collections import deque
+from pathlib import Path
 
 
 class Grafo:
@@ -40,6 +41,69 @@ class Grafo:
                 [False] * (numero_vertices + 1)
                 for _ in range(numero_vertices + 1)
             ]
+
+    @classmethod
+    def de_arquivo(
+        cls, caminho: str | Path, representacao: str = "lista"
+    ) -> "Grafo":
+        """Cria um grafo lendo um arquivo de texto.
+
+        O primeiro conteúdo não vazio nem comentado deve ser o número de
+        vértices. Cada linha seguinte deve conter dois inteiros, que
+        identificam as extremidades de uma aresta não direcionada. Linhas
+        vazias e linhas iniciadas por ``#`` são ignoradas.
+        """
+        caminho = Path(caminho)
+        try:
+            conteudo = caminho.read_text(encoding="utf-8").splitlines()
+        except OSError as erro:
+            raise OSError(
+                f"Não foi possível ler o arquivo '{caminho}': {erro.strerror or erro}."
+            ) from erro
+
+        linhas_uteis = [
+            (numero_linha, linha.strip())
+            for numero_linha, linha in enumerate(conteudo, start=1)
+            if linha.strip() and not linha.strip().startswith("#")
+        ]
+        if not linhas_uteis:
+            raise ValueError("O arquivo de entrada está vazio.")
+
+        numero_linha, texto_numero_vertices = linhas_uteis[0]
+        partes = texto_numero_vertices.split()
+        if len(partes) != 1:
+            raise ValueError(
+                f"Linha {numero_linha}: informe somente o número de vértices."
+            )
+        try:
+            numero_vertices = int(partes[0])
+        except ValueError as erro:
+            raise ValueError(
+                f"Linha {numero_linha}: número de vértices inválido."
+            ) from erro
+
+        grafo = cls(numero_vertices, representacao=representacao)
+        for numero_linha, texto_aresta in linhas_uteis[1:]:
+            partes = texto_aresta.split()
+            if len(partes) != 2:
+                raise ValueError(
+                    f"Linha {numero_linha}: cada aresta deve conter exatamente dois vértices."
+                )
+            try:
+                u, v = map(int, partes)
+            except ValueError as erro:
+                raise ValueError(
+                    f"Linha {numero_linha}: os vértices da aresta devem ser inteiros."
+                ) from erro
+
+            try:
+                grafo.adicionar_aresta(u, v)
+            except (TypeError, ValueError) as erro:
+                raise ValueError(
+                    f"Linha {numero_linha}: aresta inválida ({u}, {v}): {erro}"
+                ) from erro
+
+        return grafo
 
     def _validar_vertice(self, vertice: int) -> None:
         """Garante que o vértice informado pertence ao grafo."""

@@ -4,14 +4,31 @@ Projeto acadêmico para implementar uma biblioteca de grafos não direcionados e
 
 ## Formato do arquivo de entrada
 
-O arquivo de entrada é um arquivo de texto com este formato:
-
 1. A primeira linha contém o número de vértices `n`.
 2. Cada linha seguinte contém uma aresta, representada por dois números inteiros `u v`.
 3. Os vértices são identificados pelos números de `1` até `n`.
 4. Como o grafo é não direcionado, uma aresta `u v` conecta os dois vértices nos dois sentidos. Não é necessário escrever a mesma aresta duas vezes.
 
-O arquivo `grafos/exemplo.txt` representa um grafo pequeno usado para validar o programa durante o desenvolvimento.
+O arquivo `grafos/exemplo.txt` representa um grafo pequeno usado para validar a biblioteca durante o desenvolvimento.
+
+## Biblioteca atual
+
+O módulo `grafo.py` contém a classe `Grafo`. Para selecionar uma representação, informe o parâmetro `representacao`:
+
+```python
+from grafo import Grafo
+
+grafo_lista = Grafo(5, representacao="lista")
+grafo_matriz = Grafo(5, representacao="matriz")
+```
+
+As duas representações oferecem os métodos `adicionar_aresta(u, v)` e `vizinhos(vertice)`. Apenas a estrutura escolhida é alocada em cada objeto.
+
+## Executar os testes
+
+```bash
+python -m unittest -v
+```
 
 ## Plano de implementação
 

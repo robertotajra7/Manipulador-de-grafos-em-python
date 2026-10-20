@@ -82,3 +82,64 @@ class Grafo:
             for vizinho in range(1, self.numero_vertices + 1)
             if self.matriz_adjacencia[vertice][vizinho]
         ]
+
+    def grau(self, vertice: int) -> int:
+        """Retorna o grau do vértice informado.
+
+        Em um grafo não direcionado, um laço (aresta de um vértice para ele
+        mesmo) contribui com duas unidades para o grau.
+        """
+        vizinhos = self.vizinhos(vertice)
+        grau = len(vizinhos)
+
+        # Um laço aparece uma vez na representação, mas conta duas vezes no grau.
+        if vertice in vizinhos:
+            grau += 1
+
+        return grau
+
+    def graus(self) -> dict[int, int]:
+        """Retorna um dicionário com o grau de cada vértice."""
+        return {
+            vertice: self.grau(vertice)
+            for vertice in range(1, self.numero_vertices + 1)
+        }
+
+    @property
+    def numero_arestas(self) -> int:
+        """Retorna a quantidade de arestas do grafo, sem duplicar arestas.
+
+        Para grafos não direcionados, a soma dos graus é duas vezes o número
+        de arestas. Essa relação também funciona para grafos com laços.
+        """
+        return sum(self.graus().values()) // 2
+
+    @property
+    def grau_minimo(self) -> int:
+        """Retorna o menor grau entre os vértices do grafo."""
+        return min(self.graus().values())
+
+    @property
+    def grau_maximo(self) -> int:
+        """Retorna o maior grau entre os vértices do grafo."""
+        return max(self.graus().values())
+
+    @property
+    def grau_medio(self) -> float:
+        """Retorna o grau médio dos vértices do grafo."""
+        return sum(self.graus().values()) / self.numero_vertices
+
+    def estatisticas(self) -> dict[str, int | float]:
+        """Retorna as estatísticas solicitadas no trabalho.
+
+        As chaves do dicionário são: numero_vertices, numero_arestas,
+        grau_minimo, grau_maximo e grau_medio.
+        """
+        graus = self.graus()
+        return {
+            "numero_vertices": self.numero_vertices,
+            "numero_arestas": sum(graus.values()) // 2,
+            "grau_minimo": min(graus.values()),
+            "grau_maximo": max(graus.values()),
+            "grau_medio": sum(graus.values()) / self.numero_vertices,
+        }

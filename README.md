@@ -24,6 +24,26 @@ grafo_matriz = Grafo(5, representacao="matriz")
 
 As duas representações oferecem os métodos `adicionar_aresta(u, v)` e `vizinhos(vertice)`. Apenas a estrutura escolhida é alocada em cada objeto.
 
+## Estatísticas do grafo
+
+A classe calcula o grau de cada vértice e as estatísticas solicitadas no trabalho.
+Os atributos `numero_arestas`, `grau_minimo`, `grau_maximo` e `grau_medio`
+retornam os valores correspondentes; o método `graus()` retorna o grau de cada
+vértice e `estatisticas()` reúne todos os valores em um dicionário.
+
+```python
+from grafo import Grafo
+
+grafo = Grafo(5, representacao="lista")
+for u, v in [(1, 2), (2, 5), (5, 3), (4, 5), (1, 5)]:
+    grafo.adicionar_aresta(u, v)
+
+print(grafo.estatisticas())
+```
+
+Para o grafo de exemplo, as estatísticas esperadas são: 5 vértices, 5 arestas,
+grau mínimo 1, grau máximo 4 e grau médio 2,0.
+
 ## Executar os testes
 
 ```bash

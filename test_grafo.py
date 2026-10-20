@@ -86,5 +86,52 @@ class TestGrafoMatrizAdjacencia(unittest.TestCase):
             Grafo(5, representacao="arvore")
 
 
+class TestEstatisticasGrafo(unittest.TestCase):
+    def test_graus_do_exemplo_em_ambas_representacoes(self) -> None:
+        esperados = {1: 2, 2: 2, 3: 1, 4: 1, 5: 4}
+        for representacao in ("lista", "matriz"):
+            with self.subTest(representacao=representacao):
+                grafo = criar_grafo(representacao)
+                self.assertEqual(grafo.graus(), esperados)
+
+    def test_estatisticas_do_exemplo_em_ambas_representacoes(self) -> None:
+        esperadas = {
+            "numero_vertices": 5,
+            "numero_arestas": 5,
+            "grau_minimo": 1,
+            "grau_maximo": 4,
+            "grau_medio": 2.0,
+        }
+        for representacao in ("lista", "matriz"):
+            with self.subTest(representacao=representacao):
+                grafo = criar_grafo(representacao)
+                self.assertEqual(grafo.estatisticas(), esperadas)
+                self.assertEqual(grafo.numero_arestas, 5)
+                self.assertEqual(grafo.grau_minimo, 1)
+                self.assertEqual(grafo.grau_maximo, 4)
+                self.assertEqual(grafo.grau_medio, 2.0)
+
+    def test_vertices_isolados_sao_contabilizados(self) -> None:
+        for representacao in ("lista", "matriz"):
+            with self.subTest(representacao=representacao):
+                grafo = Grafo(4, representacao=representacao)
+                grafo.adicionar_aresta(1, 2)
+                self.assertEqual(grafo.graus(), {1: 1, 2: 1, 3: 0, 4: 0})
+                self.assertEqual(grafo.numero_arestas, 1)
+                self.assertEqual(grafo.grau_minimo, 0)
+                self.assertEqual(grafo.grau_maximo, 1)
+                self.assertEqual(grafo.grau_medio, 0.5)
+
+    def test_laco_contribui_duas_unidades_para_o_grau(self) -> None:
+        for representacao in ("lista", "matriz"):
+            with self.subTest(representacao=representacao):
+                grafo = Grafo(2, representacao=representacao)
+                grafo.adicionar_aresta(1, 1)
+                grafo.adicionar_aresta(1, 2)
+                self.assertEqual(grafo.graus(), {1: 3, 2: 1})
+                self.assertEqual(grafo.numero_arestas, 2)
+                self.assertEqual(grafo.grau_medio, 2.0)
+
+
 if __name__ == "__main__":
     unittest.main()

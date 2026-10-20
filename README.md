@@ -71,3 +71,42 @@ Os testes verificam as duas representações, estatísticas, BFS, leitura de arq
 ## Próximas funcionalidades
 
 O projeto será desenvolvido incrementalmente com commits separados. A próxima etapa após entrada e saída será implementar e validar os experimentos de uso de memória e tempo de execução nos grafos disponibilizados para os estudos de caso.
+
+## Experimentos de memória e tempo
+
+O arquivo `experimentos.py` compara a lista e a matriz de adjacência usando a
+mesma entrada. Por padrão, realiza 100 buscas em largura por representação e
+grava os resultados em `resultados/experimentos.csv`:
+
+```bash
+python experimentos.py grafos/exemplo.txt --repeticoes 100
+```
+
+Para escolher outro arquivo de saída:
+
+```bash
+python experimentos.py grafos/exemplo.txt \
+  --repeticoes 100 \
+  --saida resultados/experimentos_grafo1.csv
+```
+
+A leitura do grafo é feita antes da medição do tempo; cada chamada da BFS é
+cronometrada individualmente e o programa calcula a média. A medição de memória
+é feita em um processo separado para cada representação, após carregar o grafo,
+consultando o RSS do processo em Linux (`/proc/self/status`). O RSS inclui o
+interpretador Python e a biblioteca, e não somente a estrutura do grafo; por
+isso, essa medida representa o consumo do processo e pode variar entre
+execuções.
+
+O CSV informa a representação, quantidade de vértices e arestas, número de
+buscas, número de origens distintas, tempo total, tempo médio por BFS e memória
+residente do processo. Se houver menos vértices do que buscas solicitadas, o
+programa visita todos os vértices como origem antes de reutilizar as origens.
+Consequentemente, o grafo de cinco vértices do exemplo serve para validar o
+funcionamento, mas não para uma comparação de desempenho representativa.
+
+Execute todos os testes com:
+
+```bash
+python -m unittest -v
+```

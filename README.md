@@ -9,6 +9,7 @@ Biblioteca de grafos não direcionados em Python, desenvolvida incrementalmente 
 - `experimentos.py`: compara tempo de BFS e memória residente das representações, registrando resultados em CSV.
 - `test_grafo.py`, `test_io.py` e `test_experimentos.py`: testes automatizados.
 - `grafos/exemplo.txt`: grafo pequeno para validação durante o desenvolvimento.
+- `relatorio_tecnico_final`: relatório completo dol trabalho.
 
 ## Formato de entrada
 

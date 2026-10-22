@@ -1,4 +1,5 @@
 """Testes da biblioteca: representações, estatísticas e BFS."""
+"""Testando testando blablabla"""
 
 import tempfile
 import unittest

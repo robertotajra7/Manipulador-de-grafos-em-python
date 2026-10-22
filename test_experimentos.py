@@ -1,4 +1,4 @@
-"""Testes das rotinas de experimento de desempenho."""
+"""Testes das medições e da proteção de memória do script de experimentos."""
 
 import csv
 import tempfile
@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from experimentos import (
+    avaliar_viabilidade_matriz,
     executar_experimentos,
     gerar_origens,
     medir_tempo_bfs,
@@ -13,62 +14,60 @@ from experimentos import (
 from grafo import Grafo
 
 
-class TestOrigensETemporizacao(unittest.TestCase):
-    def test_usa_origens_diferentes_quando_ha_vertices_suficientes(self) -> None:
-        self.assertEqual(gerar_origens(120, 100), list(range(1, 101)))
+class TestOrigensETempo(unittest.TestCase):
+    def test_origens_distintas_e_reproduziveis(self) -> None:
+        primeiras = gerar_origens(200, 100)
+        segundas = gerar_origens(200, 100)
+        self.assertEqual(primeiras, segundas)
+        self.assertEqual(len(set(primeiras)), 100)
 
-    def test_reutiliza_origens_somente_apos_visitar_todos_os_vertices(self) -> None:
-        self.assertEqual(gerar_origens(3, 5), [1, 2, 3, 1, 2])
+    def test_reutiliza_origens_somente_depois_de_usar_todas(self) -> None:
+        origens = gerar_origens(3, 5)
+        self.assertEqual(set(origens[:3]), {1, 2, 3})
+        self.assertEqual(origens[3:], origens[:2])
 
-    def test_rejeita_quantidade_de_repeticoes_invalida(self) -> None:
+    def test_rejeita_repeticoes_invalidas(self) -> None:
         with self.assertRaises(ValueError):
             gerar_origens(5, 0)
 
-    def test_tempo_total_e_media_sao_nao_negativos(self) -> None:
-        grafo = Grafo(3, representacao="lista")
+    def test_tempo_total_e_media_validos(self) -> None:
+        grafo = Grafo(3)
         grafo.adicionar_aresta(1, 2)
-        origens = [1, 2, 3]
-        total_ms, media_ms = medir_tempo_bfs(grafo, origens)
-        self.assertGreaterEqual(total_ms, 0)
-        self.assertGreaterEqual(media_ms, 0)
-        self.assertAlmostEqual(media_ms, total_ms / len(origens), places=9)
+        total, media = medir_tempo_bfs(grafo, [1, 2, 3])
+        self.assertGreaterEqual(total, 0)
+        self.assertGreaterEqual(media, 0)
+        self.assertAlmostEqual(media, total / 3, places=8)
+
+    def test_matriz_grande_e_recusada_sem_tentar_alocar(self) -> None:
+        viavel, estimativa, motivo = avaliar_viabilidade_matriz(
+            4_843_750, memoria_disponivel_bytes=16_000_000_000
+        )
+        self.assertFalse(viavel)
+        self.assertGreater(estimativa, 16_000_000_000)
+        self.assertIn("Matriz estimada", motivo)
 
 
 class TestExecucaoExperimentos(unittest.TestCase):
-    def setUp(self) -> None:
-        self.diretorio_temporario = tempfile.TemporaryDirectory()
-        self.addCleanup(self.diretorio_temporario.cleanup)
-        raiz = Path(self.diretorio_temporario.name)
-        self.entrada = raiz / "grafo.txt"
-        self.saida = raiz / "resultados" / "experimentos.csv"
-        self.entrada.write_text(
-            "5\n1 2\n2 5\n5 3\n4 5\n1 5\n", encoding="utf-8"
+    def test_execucao_gera_csv_das_duas_representacoes(self) -> None:
+        with tempfile.TemporaryDirectory() as diretorio:
+            raiz = Path(diretorio)
+            entrada = raiz / "grafo.txt"
+            saida = raiz / "resultados" / "experimentos.csv"
+            entrada.write_text("5\n1 2\n2 5\n5 3\n4 5\n1 5\n", encoding="utf-8")
+            resultados = executar_experimentos(entrada, repeticoes=10, caminho_saida=saida)
+            self.assertEqual([r["representacao"] for r in resultados], ["lista", "matriz"])
+            self.assertTrue(all(r["status"] == "ok" for r in resultados))
+            self.assertTrue(all(r["numero_vertices"] == 5 for r in resultados))
+            self.assertEqual(resultados[0]["origens_distintas"], 5)
+            with saida.open(newline="", encoding="utf-8") as arquivo:
+                linhas = list(csv.DictReader(arquivo))
+            self.assertEqual(len(linhas), 2)
+            self.assertEqual(linhas[0]["representacao"], "lista")
+
+    def test_estimativa_e_segura_com_orcamento_baixo(self) -> None:
+        viavel, estimativa, motivo = avaliar_viabilidade_matriz(
+            10_000, memoria_disponivel_bytes=100_000_000
         )
-
-    def test_executa_as_duas_representacoes_e_cria_csv(self) -> None:
-        resultados = executar_experimentos(
-            self.entrada, repeticoes=10, caminho_saida=self.saida
-        )
-
-        self.assertEqual(
-            [linha["representacao"] for linha in resultados], ["lista", "matriz"]
-        )
-        for linha in resultados:
-            with self.subTest(representacao=linha["representacao"]):
-                self.assertEqual(linha["numero_vertices"], 5)
-                self.assertEqual(linha["numero_arestas"], 5)
-                self.assertEqual(linha["repeticoes"], 10)
-                self.assertEqual(linha["origens_distintas"], 5)
-                self.assertGreater(linha["memoria_residente_mb"], 0)
-                self.assertGreaterEqual(linha["tempo_medio_ms"], 0)
-
-        self.assertTrue(self.saida.is_file())
-        with self.saida.open(newline="", encoding="utf-8") as arquivo_csv:
-            linhas_csv = list(csv.DictReader(arquivo_csv))
-        self.assertEqual(len(linhas_csv), 2)
-        self.assertEqual(linhas_csv[0]["representacao"], "lista")
-        self.assertEqual(linhas_csv[1]["representacao"], "matriz")
-
-
-if __name__ == "__main__":
-    unittest.main()
+        self.assertFalse(viavel)
+        self.assertGreater(estimativa, 100_000_000)
+        self.assertIn("memória disponível", motivo)

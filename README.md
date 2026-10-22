@@ -1,56 +1,30 @@
 # Estruturas de Dados II — Avaliação I
 
-Projeto acadêmico para implementar uma biblioteca de grafos não direcionados em Python.
+Biblioteca de grafos não direcionados em Python, desenvolvida incrementalmente para a disciplina Estruturas de Dados II.
 
-## Formato do arquivo de entrada
+## Arquivos
 
-1. A primeira linha útil contém o número de vértices `n`.
-2. Cada linha seguinte contém uma aresta, representada por dois números inteiros `u v`.
-3. Os vértices são identificados pelos números de `1` até `n`.
-4. Como o grafo é não direcionado, uma aresta `u v` conecta os dois vértices nos dois sentidos. Não é necessário escrever a mesma aresta duas vezes.
-5. Linhas vazias e linhas iniciadas com `#` são ignoradas.
+- `grafo.py`: biblioteca reutilizável, representações por lista e matriz de adjacência, estatísticas, leitura linha a linha e BFS.
+- `main.py`: programa que lê um grafo e gera os arquivos de estatísticas e da árvore BFS.
+- `experimentos.py`: compara tempo de BFS e memória residente das representações, registrando resultados em CSV.
+- `test_grafo.py`, `test_io.py` e `test_experimentos.py`: testes automatizados.
+- `grafos/exemplo.txt`: grafo pequeno para validação durante o desenvolvimento.
 
-O arquivo `grafos/exemplo.txt` representa o grafo pequeno usado para validar a biblioteca.
+## Formato de entrada
 
-## Biblioteca `grafo.py`
+A primeira linha útil contém o número de vértices `n`. Cada linha seguinte contém uma aresta não direcionada `u v`. Vértices são numerados de 1 até `n`. Linhas vazias e linhas iniciadas com `#` são ignoradas.
 
-A classe `Grafo` permite escolher entre lista e matriz de adjacência:
+## Leitura e programa principal
 
-```python
-from grafo import Grafo
-
-grafo_lista = Grafo(5, representacao="lista")
-grafo_matriz = Grafo(5, representacao="matriz")
-```
-
-Também é possível carregar o grafo diretamente de um arquivo:
-
-```python
-grafo = Grafo.de_arquivo("grafos/exemplo.txt", representacao="lista")
-print(grafo.estatisticas())
-print(grafo.busca_em_largura(1))
-```
-
-A classe oferece operações para adicionar arestas, consultar vizinhos, obter o grau dos vértices, calcular as estatísticas pedidas no trabalho e executar a busca em largura (BFS). A BFS retorna o pai e o nível de cada vértice; vértices inalcançáveis têm pai e nível `None`.
-
-Para o arquivo de exemplo, as estatísticas esperadas são 5 vértices, 5 arestas, grau mínimo 1, grau máximo 4 e grau médio 2,0.
-
-## Executar o programa principal
-
-Com a pasta principal do projeto aberta no terminal, execute:
+A leitura é feita linha a linha, sem carregar o arquivo completo em memória:
 
 ```bash
 python main.py grafos/exemplo.txt --representacao lista --origem 1
 ```
 
-O argumento `--representacao` aceita `lista` ou `matriz`, e `--origem` define o vértice inicial da BFS. Os valores padrão são `lista` e `1`.
+O programa grava `resultados/estatisticas.txt` e `resultados/bfs_origem_1.txt`. A gravação da árvore BFS também é feita linha a linha para evitar manter milhões de linhas numa string em memória.
 
-A execução cria dois arquivos na pasta `resultados/`:
-
-- `estatisticas.txt`: número de vértices, número de arestas, grau mínimo, grau máximo e grau médio.
-- `bfs_origem_1.txt`: pai e nível de cada vértice para a busca iniciada em 1.
-
-Para alterar os caminhos dos arquivos, use `--saida-estatisticas` e `--saida-bfs`. Exemplo:
+Para mudar a representação e os caminhos de saída:
 
 ```bash
 python main.py grafos/exemplo.txt \
@@ -60,53 +34,38 @@ python main.py grafos/exemplo.txt \
   --saida-bfs resultados/bfs_matriz_origem_3.txt
 ```
 
-## Executar os testes
+## Representações e memória
+
+A lista de adjacência armazena vizinhos e é a opção recomendada para grafos grandes. A matriz de adjacência usa linhas `bytearray`, com um byte por posição, em vez de listas de referências Python. Apesar da redução de memória, uma matriz continua tendo custo O(V²). Antes de alocar, a biblioteca estima o consumo e recusa matrizes que excedam 4 GB ou metade da memória disponível (o limite que for menor). Se não for possível consultar a memória disponível, aplica um limite conservador de 512 MB. Isso evita provocar falta de memória no sistema. A estimativa é aproximada e se refere principalmente ao armazenamento da matriz.
+
+Para consultar a estimativa de uma matriz, sem alocá-la:
+
+```bash
+python -c 'from grafo import Grafo; print(Grafo.estimar_memoria_matriz_bytes(10000) / 1_000_000, "MB")'
+```
+
+## Busca em largura (BFS)
+
+`busca_em_largura(origem)` retorna um dicionário com `pai` e `nivel` para cada vértice, adequado a grafos pequenos e médios. Para grafos com milhões de vértices, use `busca_em_largura_compacta(origem)`, que retorna dois arrays compactos (`pais`, `niveis`) indexados pelo rótulo do vértice. O valor `-1` representa pai inexistente ou nível inalcançável; a origem tem pai `-1` e nível zero.
+
+## Experimentos de tempo e memória
+
+```bash
+python experimentos.py grafos/exemplo.txt --repeticoes 100 --saida resultados/experimentos_exemplo.csv
+```
+
+O padrão é 100 buscas BFS por representação. As mesmas origens (escolhidas de forma reproduzível) são utilizadas nas duas representações. A leitura é feita fora da região cronometrada. O tempo inclui a execução compacta da BFS e a criação dos arrays de pais e níveis, mas não a leitura do arquivo nem a gravação no disco. A medição de memória é o RSS do processo depois de carregar o grafo, em um processo separado.
+
+A matriz é avaliada antes da alocação. Se a estimativa ultrapassar 4 GB, metade da memória disponível (o que for menor), ou o limite conservador de 512 MB quando a memória disponível não puder ser consultada, a medição da matriz é marcada como `não executada` no CSV e o motivo é registrado. Isso é esperado para grafos muito grandes; o consumo quadrático torna a matriz fisicamente impraticável em tais escalas.
+
+Os tempos do grafo de cinco vértices são somente uma validação da ferramenta. Para conclusões de desempenho, utilize os grafos disponibilizados pelo professor e registre as limitações de viabilidade da matriz no relatório.
+
+## Testes
 
 ```bash
 python -m unittest -v
 ```
 
-Os testes verificam as duas representações, estatísticas, BFS, leitura de arquivos de entrada válidos e inválidos e geração dos arquivos de saída.
+## Git e entrega
 
-## Próximas funcionalidades
-
-O projeto será desenvolvido incrementalmente com commits separados. A próxima etapa após entrada e saída será implementar e validar os experimentos de uso de memória e tempo de execução nos grafos disponibilizados para os estudos de caso.
-
-## Experimentos de memória e tempo
-
-O arquivo `experimentos.py` compara a lista e a matriz de adjacência usando a
-mesma entrada. Por padrão, realiza 100 buscas em largura por representação e
-grava os resultados em `resultados/experimentos.csv`:
-
-```bash
-python experimentos.py grafos/exemplo.txt --repeticoes 100
-```
-
-Para escolher outro arquivo de saída:
-
-```bash
-python experimentos.py grafos/exemplo.txt \
-  --repeticoes 100 \
-  --saida resultados/experimentos_grafo1.csv
-```
-
-A leitura do grafo é feita antes da medição do tempo; cada chamada da BFS é
-cronometrada individualmente e o programa calcula a média. A medição de memória
-é feita em um processo separado para cada representação, após carregar o grafo,
-consultando o RSS do processo em Linux (`/proc/self/status`). O RSS inclui o
-interpretador Python e a biblioteca, e não somente a estrutura do grafo; por
-isso, essa medida representa o consumo do processo e pode variar entre
-execuções.
-
-O CSV informa a representação, quantidade de vértices e arestas, número de
-buscas, número de origens distintas, tempo total, tempo médio por BFS e memória
-residente do processo. Se houver menos vértices do que buscas solicitadas, o
-programa visita todos os vértices como origem antes de reutilizar as origens.
-Consequentemente, o grafo de cinco vértices do exemplo serve para validar o
-funcionamento, mas não para uma comparação de desempenho representativa.
-
-Execute todos os testes com:
-
-```bash
-python -m unittest -v
-```
+Adicionar mudanças em commits incrementais. Não versionar os arquivos brutos grandes dos estudos de caso; mantenha-os fora desta pasta e registre no relatório os resultados gerados e a URL pública do repositório GitHub.

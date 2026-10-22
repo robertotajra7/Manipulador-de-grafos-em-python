@@ -10,3 +10,7 @@ venv/
 .pytest_cache/
 .vscode/
 .idea/
+
+# Saídas potencialmente grandes: as árvores BFS podem ter milhões de linhas
+resultados/bfs_*.txt
+resultados/*_bfs*.txt

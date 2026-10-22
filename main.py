@@ -1,13 +1,14 @@
-"""Programa principal para executar os estudos de caso de grafos."""
+"""Programa principal para leitura de um grafo e gravação de resultados."""
 
 import argparse
+from array import array
 from pathlib import Path
 
 from grafo import Grafo
 
 
 def formatar_estatisticas(grafo: Grafo) -> str:
-    """Retorna as estatísticas em formato de texto para o arquivo de saída."""
+    """Retorna as estatísticas do grafo em formato texto."""
     estatisticas = grafo.estatisticas()
     return (
         "Estatísticas do grafo\n"
@@ -20,25 +21,46 @@ def formatar_estatisticas(grafo: Grafo) -> str:
 
 
 def formatar_resultado_bfs(grafo: Grafo, origem: int) -> str:
-    """Executa a BFS e formata pai e nível de cada vértice em texto."""
-    resultado = grafo.busca_em_largura(origem)
+    """Formata a árvore BFS em memória; indicada para grafos pequenos."""
+    pais, niveis = grafo.busca_em_largura_compacta(origem)
     linhas = [
         "Busca em largura (BFS)",
         f"Vértice de origem: {origem}",
         "",
         "Vértice;Pai;Nível",
     ]
-
-    for vertice, dados in resultado.items():
-        pai = "-" if dados["pai"] is None else str(dados["pai"])
-        nivel = "-" if dados["nivel"] is None else str(dados["nivel"])
-        linhas.append(f"{vertice};{pai};{nivel}")
-
+    for vertice in range(1, grafo.numero_vertices + 1):
+        pai = pais[vertice]
+        nivel = niveis[vertice]
+        texto_pai = "-" if pai == -1 else str(pai)
+        texto_nivel = "-" if nivel == -1 else str(nivel)
+        linhas.append(f"{vertice};{texto_pai};{texto_nivel}")
     return "\n".join(linhas) + "\n"
 
 
+def escrever_resultado_bfs(
+    caminho: str | Path,
+    grafo: Grafo,
+    origem: int,
+    pais: array,
+    niveis: array,
+) -> None:
+    """Grava pais e níveis linha a linha, sem criar uma saída gigante em RAM."""
+    destino = Path(caminho)
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    with destino.open("w", encoding="utf-8") as arquivo:
+        arquivo.write("Busca em largura (BFS)\n")
+        arquivo.write(f"Vértice de origem: {origem}\n\n")
+        arquivo.write("Vértice;Pai;Nível\n")
+        for vertice in range(1, grafo.numero_vertices + 1):
+            pai = pais[vertice]
+            nivel = niveis[vertice]
+            texto_pai = "-" if pai == -1 else str(pai)
+            texto_nivel = "-" if nivel == -1 else str(nivel)
+            arquivo.write(f"{vertice};{texto_pai};{texto_nivel}\n")
+
+
 def escrever_arquivo(caminho: str | Path, conteudo: str) -> None:
-    """Cria a pasta de destino, se necessário, e grava texto em UTF-8."""
     destino = Path(caminho)
     destino.parent.mkdir(parents=True, exist_ok=True)
     destino.write_text(conteudo, encoding="utf-8")
@@ -51,70 +73,52 @@ def processar_arquivo(
     saida_estatisticas: str | Path,
     saida_bfs: str | Path,
 ) -> None:
-    """Lê o grafo, calcula os resultados e escreve os dois arquivos de saída."""
+    """Lê um grafo, processa estatísticas e BFS e grava os arquivos de saída."""
     grafo = Grafo.de_arquivo(entrada, representacao=representacao)
-    # Calcula a BFS antes de gravar arquivos para validar a origem primeiro.
-    texto_bfs = formatar_resultado_bfs(grafo, origem)
-    texto_estatisticas = formatar_estatisticas(grafo)
-    escrever_arquivo(saida_estatisticas, texto_estatisticas)
-    escrever_arquivo(saida_bfs, texto_bfs)
+    # Os arrays compactos deixam a gravação viável para milhões de vértices.
+    pais, niveis = grafo.busca_em_largura_compacta(origem)
+    escrever_arquivo(saida_estatisticas, formatar_estatisticas(grafo))
+    escrever_resultado_bfs(saida_bfs, grafo, origem, pais, niveis)
 
 
 def criar_parser() -> argparse.ArgumentParser:
-    """Configura os argumentos de linha de comando do programa."""
     parser = argparse.ArgumentParser(
         description=(
-            "Lê um grafo não direcionado e grava suas estatísticas e o "
-            "resultado da busca em largura (BFS)."
+            "Lê um grafo não direcionado e grava as estatísticas e a árvore BFS."
         )
     )
+    parser.add_argument("entrada", help="arquivo texto de entrada do grafo")
     parser.add_argument(
-        "entrada",
-        help="caminho do arquivo de entrada do grafo, por exemplo grafos/exemplo.txt",
+        "--representacao", choices=("lista", "matriz"), default="lista",
+        help="representação usada (padrão: lista)",
     )
+    parser.add_argument("--origem", type=int, default=1, help="origem da BFS (padrão: 1)")
     parser.add_argument(
-        "--representacao",
-        choices=("lista", "matriz"),
-        default="lista",
-        help="representação utilizada para armazenar o grafo (padrão: lista)",
-    )
-    parser.add_argument(
-        "--origem",
-        type=int,
-        default=1,
-        help="vértice inicial da BFS (padrão: 1)",
-    )
-    parser.add_argument(
-        "--saida-estatisticas",
-        default="resultados/estatisticas.txt",
+        "--saida-estatisticas", default="resultados/estatisticas.txt",
         help="caminho do arquivo de estatísticas",
     )
     parser.add_argument(
-        "--saida-bfs",
-        default=None,
+        "--saida-bfs", default=None,
         help="caminho do arquivo BFS (padrão: resultados/bfs_origem_N.txt)",
     )
     return parser
 
 
-def main() -> int:
-    """Ponto de entrada para execução pelo terminal."""
+def main(argumentos: list[str] | None = None) -> int:
     parser = criar_parser()
-    argumentos = parser.parse_args()
-    saida_bfs = argumentos.saida_bfs or f"resultados/bfs_origem_{argumentos.origem}.txt"
-
+    args = parser.parse_args(argumentos)
+    saida_bfs = args.saida_bfs or f"resultados/bfs_origem_{args.origem}.txt"
     try:
         processar_arquivo(
-            entrada=argumentos.entrada,
-            representacao=argumentos.representacao,
-            origem=argumentos.origem,
-            saida_estatisticas=argumentos.saida_estatisticas,
+            entrada=args.entrada,
+            representacao=args.representacao,
+            origem=args.origem,
+            saida_estatisticas=args.saida_estatisticas,
             saida_bfs=saida_bfs,
         )
-    except (OSError, TypeError, ValueError) as erro:
+    except (OSError, TypeError, ValueError, MemoryError) as erro:
         parser.error(str(erro))
-
-    print(f"Estatísticas gravadas em: {argumentos.saida_estatisticas}")
+    print(f"Estatísticas gravadas em: {args.saida_estatisticas}")
     print(f"Resultado da BFS gravado em: {saida_bfs}")
     return 0
 

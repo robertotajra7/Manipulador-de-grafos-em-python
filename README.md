@@ -69,3 +69,35 @@ python -m unittest -v
 ## Git e entrega
 
 Adicionar mudanças em commits incrementais. Não versionar os arquivos brutos grandes dos estudos de caso; mantenha-os fora desta pasta e registre no relatório os resultados gerados e a URL pública do repositório GitHub.
+
+## Estudos de caso: pais e distâncias
+
+O script `estudos_caso.py` resolve as perguntas específicas do enunciado. Ele
+carrega cada grafo uma vez usando lista de adjacência e executa cinco BFS
+compactas:
+
+- origens 1, 2 e 3: registra os pais dos vértices 10, 20 e 30;
+- origem 10: obtém as distâncias para 20 e 30;
+- origem 20: obtém a distância para 30.
+
+Como os grafos são não direcionados, as distâncias são simétricas. Os arrays
+compactos são liberados entre as buscas para limitar o uso de memória. Se um
+vértice não for alcançável, o CSV registra `inalcancavel`.
+
+Execute um grafo por vez para evitar manter mais de um grafo grande na memória:
+
+```bash
+python estudos_caso.py ~/Documentos/grafos-edii/grafo_1.txt \
+  --saida ~/Documentos/resultados-edii/estudo_caso_grafo_1.csv
+```
+
+Repita para `grafo_2.txt` até `grafo_6.txt`, alterando a entrada e o nome da
+saída. O CSV gerado contém uma linha por grafo e todas as respostas às perguntas
+sobre pais e distâncias. Os arquivos de grafos grandes devem permanecer fora do
+repositório Git.
+
+Teste as funcionalidades novas com:
+
+```bash
+python -m unittest -v
+```

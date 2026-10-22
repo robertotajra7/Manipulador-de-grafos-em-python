@@ -90,7 +90,7 @@ class Grafo:
 
     @staticmethod
     def memoria_disponivel_bytes() -> int | None:
-        """Lê MemAvailable no Linux; retorna None se a informação não existir."""
+        """Lê MemAvailable e retorna None se a informação não existir."""
         try:
             with open("/proc/meminfo", "r", encoding="utf-8") as arquivo:
                 for linha in arquivo:

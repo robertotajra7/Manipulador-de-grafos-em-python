@@ -60,16 +60,6 @@ A matriz é avaliada antes da alocação. Se a estimativa ultrapassar 4 GB, meta
 
 Os tempos do grafo de cinco vértices são somente uma validação da ferramenta. Para conclusões de desempenho, utilize os grafos disponibilizados pelo professor e registre as limitações de viabilidade da matriz no relatório.
 
-## Testes
-
-```bash
-python -m unittest -v
-```
-
-## Git e entrega
-
-Adicionar mudanças em commits incrementais. Não versionar os arquivos brutos grandes dos estudos de caso; mantenha-os fora desta pasta e registre no relatório os resultados gerados e a URL pública do repositório GitHub.
-
 ## Estudos de caso: pais e distâncias
 
 O script `estudos_caso.py` resolve as perguntas específicas do enunciado. Ele
@@ -94,10 +84,4 @@ python estudos_caso.py ~/Documentos/grafos-edii/grafo_1.txt \
 Repita para `grafo_2.txt` até `grafo_6.txt`, alterando a entrada e o nome da
 saída. O CSV gerado contém uma linha por grafo e todas as respostas às perguntas
 sobre pais e distâncias. Os arquivos de grafos grandes devem permanecer fora do
-repositório Git.
-
-Teste as funcionalidades novas com:
-
-```bash
-python -m unittest -v
-```
+repositório Git para evitar sobrecarga.

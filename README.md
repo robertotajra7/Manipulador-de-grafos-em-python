@@ -1,4 +1,4 @@
-# Estruturas de Dados II — Avaliação I
+# Estruturas de Dados II
 
 Biblioteca de grafos não direcionados em Python, desenvolvida incrementalmente para a disciplina Estruturas de Dados II.
 
